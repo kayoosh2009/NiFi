@@ -1,0 +1,22 @@
+style main{
+	background-color: #dddddd;
+	stroke-color: #000000;
+}
+
+object button{
+	id: play_button;
+	style: main;
+	location{
+		align: center;
+		width: 200;
+		height: 50;
+	}
+}
+
+object text{
+	location{
+		set-x: 20;
+		set-y: 20;
+	}
+	text{ "Hello world!" }
+}
