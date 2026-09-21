@@ -6,6 +6,9 @@ use ui::Value;
 // id объекта -> имя параметра -> значение
 type Params = HashMap<String, HashMap<String, Value>>;
 
+// id кнопки -> текущий масштаб (для анимации)
+type Anim = HashMap<String, f32>;
+
 fn set(p: &mut Params, id: &str, name: &str, v: Value) {
     p.entry(id.into()).or_default().insert(name.into(), v);
 }
@@ -13,6 +16,8 @@ fn set(p: &mut Params, id: &str, name: &str, v: Value) {
 #[macroquad::main("Nifi")]
 async fn main() {
     let mut params = Params::new();
+    let mut anim = Anim::new();
+    let mut events: Vec<String> = vec![];
     let mut n = 0;
     set(&mut params, "theWonNum", "number", Value::Int(0));
     loop {
@@ -26,8 +31,15 @@ async fn main() {
             .map_err(|e| e.to_string())
             .and_then(|s| ui::parse(&s))
         {
-            Ok(nodes) => draw(&nodes, &params),
+            Ok(nodes) => draw(&nodes, &params, &mut anim, &mut events),
             Err(e) => { draw_text(&e, 10., 30., 24., RED); }
+        }
+        // сюда приходят клики по кнопкам (id кнопки)
+        for id in events.drain(..) {
+            if id == "play_button" {
+                n += 1;
+                set(&mut params, "theWonNum", "number", Value::Int(n));
+            }
         }
         next_frame().await;
     }
@@ -42,7 +54,7 @@ fn anchor(a: &str) -> (f32, f32) {
     }
 }
 
-fn draw(nodes: &[ui::Node], params: &Params) {
+fn draw(nodes: &[ui::Node], params: &Params, anim: &mut Anim, events: &mut Vec<String>) {
     let styles: HashMap<&str, &ui::Node> = nodes.iter()
         .filter(|n| n.kind == "style")
         .map(|n| (n.name.as_str(), n))
@@ -62,6 +74,24 @@ fn draw(nodes: &[ui::Node], params: &Params) {
             None => (num("set-x", 0.), num("set-y", 0.)),
         };
 
+        let (mut x, mut y, mut w, mut h) = (x, y, w, h);
+        if o.name == "button" {
+            let id = o.props.get("id").cloned().unwrap_or_default();
+            let (mx, my) = mouse_position();
+            let hover = mx >= x && mx <= x + w && my >= y && my <= y + h;
+            let down = hover && is_mouse_button_down(MouseButton::Left);
+            if hover && is_mouse_button_released(MouseButton::Left) {
+                events.push(id.clone());
+            }
+            let target = if down { 0.93 } else if hover { 1.06 } else { 1.0 };
+            let s = anim.entry(id).or_insert(1.0);
+            *s += (target - *s) * (12. * get_frame_time()).min(1.);
+            x += w * (1. - *s) / 2.;
+            y += h * (1. - *s) / 2.;
+            w *= *s;
+            h *= *s;
+        }
+
         let color = |k: &str| style
             .and_then(|s| s.props.get(k))
             .and_then(|v| u32::from_str_radix(v.trim_start_matches('#'), 16).ok())
@@ -70,11 +100,16 @@ fn draw(nodes: &[ui::Node], params: &Params) {
         if let Some(c) = color("background-color") { draw_rectangle(x, y, w, h, c); }
         if let Some(c) = color("stroke-color") { draw_rectangle_lines(x, y, w, h, 2., c); }
 
-        if o.name == "text" {
+        if o.name == "text" || o.name == "button" {
             if let Some(t) = o.children.iter().find(|c| c.kind == "text").and_then(|c| c.text.as_ref()) {
                 let id = o.props.get("id").map(|s| s.as_str()).unwrap_or("");
                 let text = ui::fill(t, |name| params.get(id)?.get(name).cloned());
-                draw_text(&text, x, y + 24., 24., BLACK);
+                if o.name == "button" {
+                    let d = measure_text(&text, None, 24, 1.0);
+                    draw_text(&text, x + (w - d.width) / 2., y + (h + d.height) / 2., 24., BLACK);
+                } else {
+                    draw_text(&text, x, y + 24., 24., BLACK);
+                }
             }
         }
     }
