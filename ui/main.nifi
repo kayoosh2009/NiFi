@@ -4,6 +4,12 @@ style title{
 	text-stroke-color: #000000;
 }
 
+style main{
+	background: #000000;
+	color: #ffffff;
+	
+}
+
 object text{
 	id: theWonNum;
 	style: title;
