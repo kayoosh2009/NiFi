@@ -14,6 +14,7 @@ fn set(p: &mut Params, id: &str, name: &str, v: Value) {
 async fn main() {
     let mut params = Params::new();
     let mut n = 0;
+    set(&mut params, "theWonNum", "number", Value::Int(0));
     loop {
         if is_key_pressed(KeyCode::Space) {
             n += 1;
