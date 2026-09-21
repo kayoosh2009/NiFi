@@ -1,4 +1,20 @@
 use std::collections::HashMap;
+use std::fmt;
+
+#[derive(Debug, Clone)]
+pub enum Value { Null, Bool(bool), Int(i64), Float(f64), Str(String) }
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Null => Ok(()),
+            Value::Bool(b) => write!(f, "{b}"),
+            Value::Int(i) => write!(f, "{i}"),
+            Value::Float(x) => write!(f, "{x}"),
+            Value::Str(s) => write!(f, "{s}"),
+        }
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct Node {
@@ -20,6 +36,27 @@ pub fn parse(src: &str) -> Result<Vec<Node>, String> {
         out.push(p.block(kind)?);
     }
     Ok(out)
+}
+
+/// Заменяет {name} на значение. \{ даёт обычную скобку.
+pub fn fill(tpl: &str, get: impl Fn(&str) -> Option<Value>) -> String {
+    let mut out = String::new();
+    let mut it = tpl.chars();
+    while let Some(c) = it.next() {
+        match c {
+            '\\' => match it.next() {
+                Some('n') => out.push('\n'),
+                Some(n) => out.push(n),
+                None => {}
+            },
+            '{' => {
+                let name: String = it.by_ref().take_while(|&c| c != '}').collect();
+                if let Some(v) = get(name.trim()) { out.push_str(&v.to_string()); }
+            }
+            _ => out.push(c),
+        }
+    }
+    out
 }
 
 struct P { c: Vec<char>, i: usize }
@@ -54,7 +91,11 @@ impl P {
             self.i += 1;
             match c {
                 '"' => break,
-                '\\' => if let Some(n) = self.peek() { s.push(n); self.i += 1; },
+                '\\' => if let Some(n) = self.peek() {
+                    self.i += 1;
+                    if n != '"' { s.push('\\'); }
+                    s.push(n);
+                },
                 _ => s.push(c),
             }
         }
