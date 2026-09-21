@@ -41,9 +41,7 @@ fn anchor(a: &str) -> (f32, f32) {
     }
 }
 
-let id = o.props.get("id").map(|s| s.as_str()).unwrap_or("");
-let text = ui::fill(t, |name| params.get(id)?.get(name).cloned());
-draw_text(&text, x, y + 24., 24., BLACK);
+fn draw(nodes: &[ui::Node], params: &Params) {
     let styles: HashMap<&str, &ui::Node> = nodes.iter()
         .filter(|n| n.kind == "style")
         .map(|n| (n.name.as_str(), n))
@@ -73,7 +71,9 @@ draw_text(&text, x, y + 24., 24., BLACK);
 
         if o.name == "text" {
             if let Some(t) = o.children.iter().find(|c| c.kind == "text").and_then(|c| c.text.as_ref()) {
-                draw_text(t, x, y + 24., 24., BLACK);
+                let id = o.props.get("id").map(|s| s.as_str()).unwrap_or("");
+                let text = ui::fill(t, |name| params.get(id)?.get(name).cloned());
+                draw_text(&text, x, y + 24., 24., BLACK);
             }
         }
     }
