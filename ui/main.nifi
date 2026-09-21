@@ -14,9 +14,10 @@ object button{
 }
 
 object text{
+	id: theWonNum;
 	location{
 		set-x: 20;
 		set-y: 20;
 	}
-	text{ "Hello world!" }
+	text{ "The number: {number} won!" }
 }

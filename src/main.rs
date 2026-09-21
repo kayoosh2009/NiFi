@@ -1,17 +1,31 @@
 mod ui;
 use macroquad::prelude::*;
 use std::collections::HashMap;
+use ui::Value;
+
+// id объекта -> имя параметра -> значение
+type Params = HashMap<String, HashMap<String, Value>>;
+
+fn set(p: &mut Params, id: &str, name: &str, v: Value) {
+    p.entry(id.into()).or_default().insert(name.into(), v);
+}
 
 #[macroquad::main("Nifi")]
 async fn main() {
+    let mut params = Params::new();
+    let mut n = 0;
     loop {
+        if is_key_pressed(KeyCode::Space) {
+            n += 1;
+            set(&mut params, "theWonNum", "number", Value::Int(n));
+        }
         clear_background(WHITE);
         // файл перечитывается каждый кадр: изменил и сохранил, окно обновилось
         match std::fs::read_to_string("ui/main.nifi")
             .map_err(|e| e.to_string())
             .and_then(|s| ui::parse(&s))
         {
-            Ok(nodes) => draw(&nodes),
+            Ok(nodes) => draw(&nodes, &params),
             Err(e) => { draw_text(&e, 10., 30., 24., RED); }
         }
         next_frame().await;
@@ -27,7 +41,9 @@ fn anchor(a: &str) -> (f32, f32) {
     }
 }
 
-fn draw(nodes: &[ui::Node]) {
+let id = o.props.get("id").map(|s| s.as_str()).unwrap_or("");
+let text = ui::fill(t, |name| params.get(id)?.get(name).cloned());
+draw_text(&text, x, y + 24., 24., BLACK);
     let styles: HashMap<&str, &ui::Node> = nodes.iter()
         .filter(|n| n.kind == "style")
         .map(|n| (n.name.as_str(), n))
