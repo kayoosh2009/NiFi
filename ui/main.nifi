@@ -1,6 +1,17 @@
-style main{
-	background-color: #dddddd;
-	stroke-color: #000000;
+style title{
+	text-color: #ffffff;
+	text-size: 32;
+	text-stroke-color: #000000;
+}
+
+object text{
+	id: theWonNum;
+	style: title;
+	location{
+		set-x: 20;
+		set-y: 20;
+	}
+	text{ "The number: {number} won!" }
 }
 
 object button{
@@ -12,13 +23,4 @@ object button{
 		height: 50;
 	}
 	text{ "Play" }
-}
-
-object text{
-	id: theWonNum;
-	location{
-		set-x: 20;
-		set-y: 20;
-	}
-	text{ "The number: {number} won!" }
 }

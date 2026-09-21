@@ -54,6 +54,15 @@ fn anchor(a: &str) -> (f32, f32) {
     }
 }
 
+fn draw_styled(t: &str, x: f32, y: f32, size: f32, color: Color, stroke: Option<Color>) {
+    if let Some(s) = stroke {
+        for (dx, dy) in [(-1., 0.), (1., 0.), (0., -1.), (0., 1.), (-1., -1.), (1., 1.), (-1., 1.), (1., -1.)] {
+            draw_text(t, x + dx, y + dy, size, s);
+        }
+    }
+    draw_text(t, x, y, size, color);
+}
+
 fn draw(nodes: &[ui::Node], params: &Params, anim: &mut Anim, events: &mut Vec<String>) {
     let styles: HashMap<&str, &ui::Node> = nodes.iter()
         .filter(|n| n.kind == "style")
