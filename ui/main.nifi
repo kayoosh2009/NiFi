@@ -8,7 +8,7 @@ object button{
 	style: main;
 	location{
 		align: center;
-		width: 200;
+		width: 50;
 		height: 50;
 	}
 	text{ "Play" }

@@ -28,7 +28,7 @@ object button{
 
 ```
 style main{
-	background-color: #fffff;
+	background-color: #ffffff;
 	stroke-color: #000000
 }
 ```
