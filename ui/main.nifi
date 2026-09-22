@@ -2,6 +2,7 @@ style title{
 	text-color: #ffffff;
 	text-size: 32;
 	text-stroke-color: #000000;
+	font: "/home/kayoosh/Документы/Code/NiFi/ui/fonts/Glina-Script.otf";
 }
 
 style main{
