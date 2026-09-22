@@ -129,7 +129,14 @@ impl P {
                     if self.peek() == Some(':') {
                         self.i += 1;
                         self.ws();
-                        let v = self.value();
+                        let v = if self.peek() == Some('"') {
+                            let s = self.string();
+                            self.ws();
+                            if self.peek() == Some(';') { self.i += 1; }
+                            s
+                        } else {
+                            self.value()
+                        };
                         n.props.insert(word, v);
                     } else {
                         n.children.push(self.block(word)?);
