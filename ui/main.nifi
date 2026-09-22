@@ -5,9 +5,10 @@ style title{
 }
 
 style main{
-	background: #000000;
-	color: #ffffff;
-	
+	background-color: #dddddd;
+	stroke-color: #000000;
+	text-color: #ffffff;
+	text-size: 24;
 }
 
 object text{
