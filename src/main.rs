@@ -8,6 +8,20 @@ type Params = HashMap<String, HashMap<String, Value>>;
 
 // id кнопки -> текущий масштаб (для анимации)
 type Anim = HashMap<String, f32>;
+type Fonts = HashMap<String, Font>;
+
+async fn get_font<'a>(cache: &'a mut Fonts, path: &str) -> Option<&'a Font> {
+    if !cache.contains_key(path) {
+        match load_ttf_font(path).await {
+            Ok(f) => { cache.insert(path.to_string(), f); }
+            Err(e) => {
+                eprintln!("не удалось загрузить шрифт {path}: {e}");
+                return None;
+            }
+        }
+    }
+    cache.get(path)
+}
 
 fn set(p: &mut Params, id: &str, name: &str, v: Value) {
     p.entry(id.into()).or_default().insert(name.into(), v);
@@ -18,6 +32,7 @@ async fn main() {
     let mut params = Params::new();
     let mut anim = Anim::new();
     let mut events: Vec<String> = vec![];
+    let mut fonts = Fonts::new();
     let mut n = 0;
     set(&mut params, "theWonNum", "number", Value::Int(0));
     loop {
@@ -31,7 +46,7 @@ async fn main() {
             .map_err(|e| e.to_string())
             .and_then(|s| ui::parse(&s))
         {
-            Ok(nodes) => draw(&nodes, &params, &mut anim, &mut events),
+            Ok(nodes) => draw(&nodes, &params, &mut anim, &mut events, &mut fonts).await,
             Err(e) => { draw_text(&e, 10., 30., 24., RED); }
         }
         // сюда приходят клики по кнопкам (id кнопки)
@@ -54,16 +69,17 @@ fn anchor(a: &str) -> (f32, f32) {
     }
 }
 
-fn draw_styled(t: &str, x: f32, y: f32, size: f32, color: Color, stroke: Option<Color>) {
+fn draw_styled(t: &str, x: f32, y: f32, size: f32, color: Color, stroke: Option<Color>, font: Option<&Font>) {
+    let params = TextParams { font, font_size: size as u16, color, ..Default::default() };
     if let Some(s) = stroke {
         for (dx, dy) in [(-1., 0.), (1., 0.), (0., -1.), (0., 1.), (-1., -1.), (1., 1.), (-1., 1.), (1., -1.)] {
-            draw_text(t, x + dx, y + dy, size, s);
+            draw_text_ex(t, x + dx, y + dy, TextParams { color: s, ..params.clone() });
         }
     }
-    draw_text(t, x, y, size, color);
+    draw_text_ex(t, x, y, params);
 }
 
-fn draw(nodes: &[ui::Node], params: &Params, anim: &mut Anim, events: &mut Vec<String>) {
+async fn draw(nodes: &[ui::Node], params: &Params, anim: &mut Anim, events: &mut Vec<String>, fonts: &mut Fonts) {
     let styles: HashMap<&str, &ui::Node> = nodes.iter()
         .filter(|n| n.kind == "style")
         .map(|n| (n.name.as_str(), n))
@@ -113,11 +129,20 @@ fn draw(nodes: &[ui::Node], params: &Params, anim: &mut Anim, events: &mut Vec<S
             if let Some(t) = o.children.iter().find(|c| c.kind == "text").and_then(|c| c.text.as_ref()) {
                 let id = o.props.get("id").map(|s| s.as_str()).unwrap_or("");
                 let text = ui::fill(t, |name| params.get(id)?.get(name).cloned());
+
+                let size: f32 = style.and_then(|s| s.props.get("text-size")).and_then(|v| v.parse().ok()).unwrap_or(24.);
+                let tcolor = color("text-color").unwrap_or(BLACK);
+                let stroke = color("text-stroke-color");
+                let font = match style.and_then(|s| s.props.get("font")) {
+                    Some(p) => get_font(fonts, p).await,
+                    None => None,
+                };
+
                 if o.name == "button" {
-                    let d = measure_text(&text, None, 24, 1.0);
-                    draw_text(&text, x + (w - d.width) / 2., y + (h + d.height) / 2., 24., BLACK);
+                    let d = measure_text(&text, font, size as u16, 1.0);
+                    draw_styled(&text, x + (w - d.width) / 2., y + (h + d.height) / 2., size, tcolor, stroke, font);
                 } else {
-                    draw_text(&text, x, y + 24., 24., BLACK);
+                    draw_styled(&text, x, y + size, size, tcolor, stroke, font);
                 }
             }
         }

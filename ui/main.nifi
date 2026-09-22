@@ -5,10 +5,10 @@ style title{
 }
 
 style main{
-	background-color: #dddddd;
+	background-color: #ffffff;
 	stroke-color: #000000;
 	text-color: #ffffff;
-	text-size: 24;
+	text-size: 10;
 }
 
 object text{
