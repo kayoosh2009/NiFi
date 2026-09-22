@@ -10,6 +10,28 @@ type Params = HashMap<String, HashMap<String, Value>>;
 type Anim = HashMap<String, f32>;
 type Fonts = HashMap<String, Font>;
 
+const NIFI_DIR: &str = "ui/";
+
+/// "fonts/x.otf" -> "ui/fonts/x.otf". Абсолютный путь (с /) не трогаем.
+fn resolve(path: &str) -> String {
+    if path.starts_with('/') { path.to_string() } else { format!("{NIFI_DIR}{path}") }
+}
+
+type Textures = HashMap<String, Texture2D>;
+
+async fn get_texture<'a>(cache: &'a mut Textures, path: &str) -> Option<&'a Texture2D> {
+    if !cache.contains_key(path) {
+        match load_texture(path).await {
+            Ok(t) => { cache.insert(path.to_string(), t); }
+            Err(e) => {
+                eprintln!("не удалось загрузить картинку {path}: {e}");
+                return None;
+            }
+        }
+    }
+    cache.get(path)
+}
+
 async fn get_font<'a>(cache: &'a mut Fonts, path: &str) -> Option<&'a Font> {
     if !cache.contains_key(path) {
         match load_ttf_font(path).await {

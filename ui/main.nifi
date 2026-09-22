@@ -2,14 +2,15 @@ style title{
 	text-color: #ffffff;
 	text-size: 32;
 	text-stroke-color: #000000;
-	font: "/home/kayoosh/Документы/Code/NiFi/ui/fonts/Glina-Script.otf";
+	font: "fonts/Glina-Script.otf";
 }
 
 style main{
-	background-color: #ffffff;
+	background-color: #dddddd;
 	stroke-color: #000000;
-	text-color: #ffffff;
-	text-size: 10;
+	text-color: #000000;
+	text-size: 24;
+	font: "fonts/Glina-Script.otf";
 }
 
 object text{
